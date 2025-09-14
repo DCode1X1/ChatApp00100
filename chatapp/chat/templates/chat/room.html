@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex items-center justify-center">
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg flex flex-col h-[90vh]">
+    
+    <!-- Header -->
+    <div class="bg-blue-600 text-white text-lg font-semibold p-4 rounded-t-2xl">
+      Room: {{ room_name }}
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-log" class="flex-1 p-4 overflow-y-auto space-y-2 text-sm bg-gray-50">
+      <!-- messages will appear here -->
+    </div>
+
+    <!-- Input -->
+    <div class="flex p-4 border-t">
+      <input id="chat-message-input" 
+             type="text" 
+             class="flex-1 rounded-l-lg border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+             placeholder="Type a message...">
+      <button id="chat-message-submit" 
+              class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+  const roomName = "{{ room_name }}";
+  const currentUser = "{{ username }}";
+
+  const chatSocket = new WebSocket(
+      "ws://" + window.location.host + "/ws/chat/" + roomName + "/"
+  );
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const chatLog = document.querySelector("#chat-log");
+    const msg = document.createElement("div");
+
+    if (data.username === currentUser) {
+      msg.className = "flex justify-end";
+      msg.innerHTML = `<div class="bg-blue-500 text-white rounded-lg px-3 py-2 max-w-xs">${data.message}</div>`;
+    } else {
+      msg.className = "flex justify-start";
+      msg.innerHTML = `<div class="bg-gray-200 text-gray-800 rounded-lg px-3 py-2 max-w-xs">
+                        <span class="block text-xs text-gray-500">${data.username}</span>
+                        ${data.message}
+                       </div>`;
+    }
+
+    chatLog.appendChild(msg);
+    chatLog.scrollTop = chatLog.scrollHeight;
+  };
+
+  document.querySelector("#chat-message-submit").onclick = function() {
+    const input = document.querySelector("#chat-message-input");
+    if (input.value.trim() !== "") {
+      chatSocket.send(JSON.stringify({ "message": input.value }));
+      input.value = "";
+    }
+  };
+</script>
+</body>
+</html>
